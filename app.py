@@ -1,58 +1,78 @@
 import streamlit as st
-import requests
 import pandas as pd
-from datetime import datetime # 日時を扱うために追加
+from utils import get_api_data  # utils.py から関数をインポート
 
 st.title("競プロ学習ダッシュボード")
-st.header("メインページ：AC数")
+st.header("メインページ：ユーザ概要")
 
-if "username" not in st.session_state:
+# --- ユーザーIDの入力と保存 ---
+if 'username' not in st.session_state:
     st.session_state.username = ""
 
 username = st.sidebar.text_input("AtCoder IDを入力してください", st.session_state.username)
-st.session_state.username = username
+st.session_state.username = username # 入力されたIDを保存
 
-if st.sidebar.button("学習状況を表示"):
-    if username:
-        # 提出履歴を取得するAPIエンドポイント
-        url = f"https://kenkoooo.com/atcoder/atcoder-api/v3/user/submissions?user={username}&from_second=0"
+# --- メインの処理 ---
+if username:
+    
+    # --- データを取得 ---
+    # 1. AC数とランクを取得
+    url_rank = f"https://kenkoooo.com/atcoder/atcoder-api/v3/user/ac_rank?user={username}"
+    data_rank = get_api_data(url_rank)
+    
+    # 2. レート履歴を取得
+    url_history = f"https://atcoder.jp/users/{username}/history/json"
+    data_history = get_api_data(url_history)
+    
+    # --- サマリーを4つのカラムで表示 ---
+    if data_rank and data_history:
+        st.subheader(f"{username}さんのサマリー")
+        col1, col2, col3, col4 = st.columns(4)
+
+        # 1. AC数
+        col1.metric(label="AC数", value=f"{data_rank.get('count', 0)} 問")
         
+        # 2. AC数ランク
+        col2.metric(label="AC数ランク", value=f"{data_rank.get('rank', 'N/A')} 位")
+
+        # 3. 現在レートと最高レートの計算
         try:
-            response = requests.get(url)
-            data = response.json()
-            
-            # --- ここから改良 ---
-            if data:
-                # 1. データをDataFrameに変換
-                df = pd.DataFrame(data)
-                
-                # 2. ACしたものだけを抜き出す
-                ac_df = df[df['result'] == 'AC'].copy()
-                
-                # 3. AC数を表示
-                st.write(f"## {username}さん のAC数")
-                st.write(f"**{len(ac_df.problem_id.unique())} 問** (ユニーク問題数)") # 重複を除いた問題数
+            df_history = pd.DataFrame(data_history)
+            rated_history = df_history[df_history['NewRating'] > 0]
 
-                # 4. ACした問題リストを表示
-                st.write("--- ACした問題リスト (最新50件) ---")
+            if not rated_history.empty:
+                current_rate = rated_history['NewRating'].iloc[-1]
+                highest_rate = rated_history['NewRating'].max()
                 
-                # 見やすいように列を絞り込み、重複を除外
-                ac_df_display = ac_df.drop_duplicates(subset='problem_id')
-                
-                # 日時を日本時間に変換
-                ac_df_display['time'] = pd.to_datetime(ac_df_display['epoch_second'], unit='s') + pd.Timedelta(hours=9)
-                
-                # 新しい順にソートして表示
-                st.dataframe(
-                    ac_df_display[['time', 'problem_id', 'contest_id', 'point']].sort_values(by='time', ascending=False).head(50)
-                )
-                
+                col3.metric(label="現在レート", value=f"{current_rate}")
+                col4.metric(label="最高レート", value=f"{highest_rate}")
             else:
-                st.write(f"## {username}さん のAC数")
-                st.write("**0 問**")
-            # --- ここまで ---
-
-        except Exception as e:
-            st.error(f"データの取得に失敗しました: {e}")
+                col3.metric(label="現在レート", value="N/A")
+                col4.metric(label="最高レート", value="N/A")
+        except Exception:
+            col3.metric(label="現在レート", value="Error")
+            col4.metric(label="最高レート", value="Error")
+            
     else:
-        st.warning("IDを入力してください")
+        st.error("データの取得に失敗しました。IDが正しいか確認してください。")
+
+    # --- (おまけ) 最新のAC履歴を表示 ---
+    st.subheader("最新のAC履歴 (5件)")
+    url_submissions = f"https://kenkoooo.com/atcoder/atcoder-api/v3/user/submissions?user={username}&from_second=0"
+    data_submissions = get_api_data(url_submissions)
+    
+    if data_submissions:
+        df_submissions = pd.DataFrame(data_submissions)
+        ac_df = df_submissions[df_submissions['result'] == 'AC'].copy()
+        
+        if not ac_df.empty:
+            ac_df['time'] = pd.to_datetime(ac_df['epoch_second'], unit='s') + pd.Timedelta(hours=9)
+            ac_df_display = ac_df.drop_duplicates(subset='problem_id')
+            st.dataframe(
+                ac_df_display[['time', 'problem_id', 'contest_id', 'point']].sort_values(by='time', ascending=False).head(5)
+            )
+        else:
+            st.write("AC履歴がありません")
+
+else:
+    st.warning("サイドバーからAtCoder IDを入力してください")
