@@ -6,7 +6,6 @@ from utils import get_api_data
 
 st.title("学習グラフ")
 
-
 if 'username' not in st.session_state or not st.session_state.username:
     st.warning("メインページでAtCoder IDを入力してください")
     st.stop() 
@@ -16,11 +15,9 @@ st.sidebar.text(f"Atcoder ID : {username}")
 
 tab_ac, tab_rate = st.tabs(["📊 提出分析", "📈 レート変動"])
 
-
 with tab_ac:
     st.header(f"{username}さんの提出状況")
     
-
     url_submissions = f"https://kenkoooo.com/atcoder/atcoder-api/v3/user/submissions?user={username}&from_second=0"
     data_submissions = get_api_data(url_submissions)
 
@@ -37,7 +34,6 @@ with tab_ac:
         )
         st.plotly_chart(fig_pie, use_container_width=True)
 
-
         st.subheader("日別AC数")
         ac_df = df_submissions[df_submissions['result'] == 'AC'].copy()
         
@@ -51,7 +47,6 @@ with tab_ac:
     else:
         st.write("提出履歴がありません")
 
-
 with tab_rate:
     st.header(f"{username}さんのレート変動")
     try:
@@ -64,20 +59,15 @@ with tab_rate:
 
             if not rated_history.empty:
                 
-
                 st.subheader("レートサマリー")
                 
-
                 col1, col2, col3 = st.columns(3)
-
 
                 col1.metric(label="Rated参加回数", value=f"{len(rated_history)} 回")
                 
-
                 highest_rate = rated_history['NewRating'].max()
                 col2.metric(label="最高レート", value=f"{highest_rate}")
                 
-
                 current_rate = rated_history['NewRating'].iloc[-1]
                 col3.metric(label="現在レート", value=f"{current_rate}")
 

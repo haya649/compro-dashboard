@@ -2,14 +2,12 @@ import streamlit as st
 import requests
 import time 
 
-
 @st.cache_data(ttl=600)
 def get_api_data(url):
-    """APIからデータを取得する（キャッシュ機能付き）"""
+
     try:
        
         time.sleep(1) 
-        
         response = requests.get(url)
         
         return response.json()

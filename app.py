@@ -11,29 +11,22 @@ if 'username' not in st.session_state:
 username = st.sidebar.text_input("AtCoder IDを入力してください", st.session_state.username)
 st.session_state.username = username 
 
-
 if username:
     
-
     url_rank = f"https://kenkoooo.com/atcoder/atcoder-api/v3/user/ac_rank?user={username}"
     data_rank = get_api_data(url_rank)
-    
     
     url_history = f"https://atcoder.jp/users/{username}/history/json"
     data_history = get_api_data(url_history)
     
-   
     if data_rank and data_history:
         st.subheader(f"{username}さんのサマリー")
         col1, col2, col3, col4 = st.columns(4)
 
-        
         col1.metric(label="AC数", value=f"{data_rank.get('count', 0)} 問")
         
-       
         col2.metric(label="AC数ランク", value=f"{data_rank.get('rank', 'N/A')} 位")
 
-      
         try:
             df_history = pd.DataFrame(data_history)
             rated_history = df_history[df_history['NewRating'] > 0]
@@ -53,8 +46,7 @@ if username:
             
     else:
         st.error("データの取得に失敗しました。IDが正しいか確認してください。")
-
-    
+        
     st.subheader("最新のAC履歴 (5件)")
     url_submissions = f"https://kenkoooo.com/atcoder/atcoder-api/v3/user/submissions?user={username}&from_second=0"
     data_submissions = get_api_data(url_submissions)
