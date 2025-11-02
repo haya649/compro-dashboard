@@ -1,41 +1,39 @@
 import streamlit as st
 import pandas as pd
-from utils import get_api_data  # utils.py から関数をインポート
+from utils import get_api_data  
 
 st.title("競プロ学習ダッシュボード")
 st.header("メインページ：ユーザ概要")
 
-# --- ユーザーIDの入力と保存 ---
 if 'username' not in st.session_state:
     st.session_state.username = ""
 
 username = st.sidebar.text_input("AtCoder IDを入力してください", st.session_state.username)
-st.session_state.username = username # 入力されたIDを保存
+st.session_state.username = username 
 
-# --- メインの処理 ---
+
 if username:
     
-    # --- データを取得 ---
-    # 1. AC数とランクを取得
+
     url_rank = f"https://kenkoooo.com/atcoder/atcoder-api/v3/user/ac_rank?user={username}"
     data_rank = get_api_data(url_rank)
     
-    # 2. レート履歴を取得
+    
     url_history = f"https://atcoder.jp/users/{username}/history/json"
     data_history = get_api_data(url_history)
     
-    # --- サマリーを4つのカラムで表示 ---
+   
     if data_rank and data_history:
         st.subheader(f"{username}さんのサマリー")
         col1, col2, col3, col4 = st.columns(4)
 
-        # 1. AC数
+        
         col1.metric(label="AC数", value=f"{data_rank.get('count', 0)} 問")
         
-        # 2. AC数ランク
+       
         col2.metric(label="AC数ランク", value=f"{data_rank.get('rank', 'N/A')} 位")
 
-        # 3. 現在レートと最高レートの計算
+      
         try:
             df_history = pd.DataFrame(data_history)
             rated_history = df_history[df_history['NewRating'] > 0]
@@ -56,7 +54,7 @@ if username:
     else:
         st.error("データの取得に失敗しました。IDが正しいか確認してください。")
 
-    # --- (おまけ) 最新のAC履歴を表示 ---
+    
     st.subheader("最新のAC履歴 (5件)")
     url_submissions = f"https://kenkoooo.com/atcoder/atcoder-api/v3/user/submissions?user={username}&from_second=0"
     data_submissions = get_api_data(url_submissions)
