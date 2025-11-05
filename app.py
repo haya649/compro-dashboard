@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 from utils import get_api_data  
-
+import time
 st.title("競プロ学習ダッシュボード")
 st.header("メインページ：ユーザ概要")
 
@@ -48,11 +48,24 @@ if username:
         st.error("データの取得に失敗しました。IDが正しいか確認してください。")
         
     st.subheader("最新のAC履歴 (5件)")
-    url_submissions = f"https://kenkoooo.com/atcoder/atcoder-api/v3/user/submissions?user={username}&from_second=0"
+
+    half_year_ago = int(time.time()) - (365 * 24 * 60 * 60 // 2)
+
+    url_submissions = f"https://kenkoooo.com/atcoder/atcoder-api/v3/user/submissions?user={username}&from_second={half_year_ago}"
     data_submissions = get_api_data(url_submissions)
     
     if data_submissions:
         df_submissions = pd.DataFrame(data_submissions)
+
+        st.write(f"取得した提出件数: {len(df_submissions)} 件")
+
+        first_sub_time = pd.to_datetime(df_submissions['epoch_second'].min(), unit='s')
+        last_sub_time = pd.to_datetime(df_submissions['epoch_second'].max(), unit='s')
+
+        st.write(f"取得したデータの期間: {first_sub_time} から {last_sub_time} まで")
+        
+
+
         ac_df = df_submissions[df_submissions['result'] == 'AC'].copy()
         
         if not ac_df.empty:

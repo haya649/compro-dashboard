@@ -3,7 +3,7 @@ import pandas as pd
 from datetime import datetime
 import plotly.express as px
 from utils import get_api_data
-
+import time
 st.title("学習グラフ")
 
 if 'username' not in st.session_state or not st.session_state.username:
@@ -16,10 +16,12 @@ st.sidebar.text(f"Atcoder ID : {username}")
 tab_ac, tab_rate = st.tabs(["📊 提出分析", "📈 レート変動"])
 
 with tab_ac:
-    st.header(f"{username}さんの提出状況")
+    st.header(f"{username}さんの過去６ヶ月間の提出状況")
     
-    url_submissions = f"https://kenkoooo.com/atcoder/atcoder-api/v3/user/submissions?user={username}&from_second=0"
+    half_year_ago = int(time.time()) - (365 * 24 * 60 * 60 // 2)
+    url_submissions = f"https://kenkoooo.com/atcoder/atcoder-api/v3/user/submissions?user={username}&from_second={half_year_ago}"
     data_submissions = get_api_data(url_submissions)
+
 
     if data_submissions:
         df_submissions = pd.DataFrame(data_submissions)
